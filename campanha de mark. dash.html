@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marketing Campaign Autopsy</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --muted-surface: #f8faff;
+    --blue: #2563eb;
+    --violet: #7c3aed;
+    --purple: #9333ea;
+    --text: #111827;
+    --muted: #64748b;
+    --soft: #e5e7eb;
+    --soft-blue: #dbeafe;
+    --soft-violet: #ede9fe;
+    --soft-purple: #f3e8ff;
+    --shadow: 0 18px 48px rgba(37, 99, 235, 0.08);
+    --shadow-soft: 0 10px 28px rgba(17, 24, 39, 0.06);
+    --radius: 18px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container {
+    width: min(100%, 1280px);
+    margin: 0 auto;
+    padding: 32px 24px 56px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+  }
+
+  h1 {
+    font-size: clamp(24px, 4vw, 34px);
+    line-height: 1.1;
+    letter-spacing: 0;
+    font-weight: 800;
+  }
+
+  .subtitle {
+    margin-top: 5px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .header-meta {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .pill {
+    border: 1px solid var(--soft);
+    border-radius: 999px;
+    padding: 9px 14px;
+    color: var(--muted);
+    background: var(--surface);
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .filter-panel {
+    background: var(--surface);
+    border: 1px solid var(--soft);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .filter-label {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  .filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .filter-btn {
+    min-height: 40px;
+    border: 1px solid var(--soft);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--muted);
+    padding: 0 16px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: border-color .2s ease, color .2s ease, background .2s ease, transform .2s ease;
+  }
+
+  .filter-btn:hover { transform: translateY(-1px); color: var(--blue); border-color: var(--soft-blue); }
+  .filter-btn.active { color: #fff; border-color: transparent; background: linear-gradient(135deg, var(--blue), var(--violet)); }
+
+  .section-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 34px 0 16px;
+  }
+
+  .section-heading h2 {
+    font-size: 18px;
+    font-weight: 800;
+  }
+
+  .section-heading p {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin-bottom: 18px;
+  }
+
+  .kpi-card,
+  .card,
+  .insight-card {
+    background: var(--surface);
+    border: 1px solid var(--soft);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .kpi-card {
+    min-height: 132px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .kpi-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--blue), var(--violet), var(--purple));
+  }
+
+  .kpi-label {
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .kpi-value {
+    color: var(--text);
+    font-size: clamp(24px, 3vw, 31px);
+    font-weight: 800;
+    letter-spacing: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .kpi-note {
+    color: var(--blue);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .grid-main,
+  .grid-two {
+    display: grid;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  .grid-main { grid-template-columns: 1fr; }
+  .grid-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  .card {
+    padding: 22px;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .card-title {
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  .card-sub {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .tag {
+    flex-shrink: 0;
+    border-radius: 999px;
+    padding: 7px 10px;
+    color: var(--violet);
+    background: var(--soft-violet);
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .chart-lg { position: relative; height: 360px; }
+  .chart-md { position: relative; height: 310px; }
+  .chart-sm { position: relative; height: 280px; }
+  .chart-top { position: relative; height: 300px; }
+
+  .insights-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin-bottom: 20px;
+  }
+
+  .recommendations-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
+
+  .insight-card {
+    min-height: 138px;
+    padding: 20px;
+    border-left: 5px solid var(--blue);
+  }
+
+  .insight-card:nth-child(2n) { border-left-color: var(--violet); }
+  .insight-card:nth-child(3n) { border-left-color: var(--purple); }
+
+  .insight-kicker {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .insight-text {
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
+  .insight-text b { color: var(--blue); }
+
+  footer {
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+    padding-top: 24px;
+    margin-top: 34px;
+    border-top: 1px solid var(--soft);
+  }
+
+  @media (max-width: 1040px) {
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .grid-two { grid-template-columns: 1fr; }
+    .insights-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 640px) {
+    .container { padding: 22px 16px 42px; }
+    header { align-items: flex-start; }
+    .brand { align-items: flex-start; }
+    .header-meta, .filter-group { width: 100%; justify-content: flex-start; }
+    .pill, .filter-btn { width: 100%; text-align: center; justify-content: center; }
+    .kpi-row,
+    .insights-grid,
+    .recommendations-grid { grid-template-columns: 1fr; }
+    .card { padding: 18px; }
+    .card-header { flex-direction: column; }
+    .chart-lg { height: 320px; }
+    .chart-md, .chart-sm, .chart-top { height: 285px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="brand">
+      <div>
+        <h1>Marketing Campaign Autopsy</h1>
+        <p class="subtitle">Dashboard executivo de performance, rentabilidade e eficiência por canal.</p>
+      </div>
+    </div>
+    <div class="header-meta">
+      <span class="pill">Jan 2025 a Jan 2026</span>
+      <span class="pill">10.000 campanhas</span>
+      <span class="pill">5 canais</span>
+    </div>
+  </header>
+
+  <div class="filter-panel">
+    <div class="filter-label">Filtro por canal</div>
+    <div class="filter-group" id="channelFilters">
+      <button class="filter-btn active" data-channel="all" type="button">Todos</button>
+      <button class="filter-btn" data-channel="Search" type="button">Search</button>
+      <button class="filter-btn" data-channel="Display" type="button">Display</button>
+      <button class="filter-btn" data-channel="Social" type="button">Social</button>
+      <button class="filter-btn" data-channel="Email" type="button">Email</button>
+      <button class="filter-btn" data-channel="Influencer" type="button">Influencer</button>
+    </div>
+  </div>
+
+  <section>
+    <div class="section-heading">
+      <div>
+        <h2>KPIs principais</h2>
+        <p>Visao financeira consolidada do recorte selecionado.</p>
+      </div>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi-card"><div class="kpi-label">Receita Total</div><div class="kpi-value" id="kpi-revenue"></div><div class="kpi-note" id="kpi-revenue-note"></div></div>
+      <div class="kpi-card"><div class="kpi-label">Investimento Total</div><div class="kpi-value" id="kpi-cost"></div><div class="kpi-note">Mídia investida</div></div>
+      <div class="kpi-card"><div class="kpi-label">Lucro Total</div><div class="kpi-value" id="kpi-profit"></div><div class="kpi-note" id="kpi-margin"></div></div>
+      <div class="kpi-card"><div class="kpi-label">ROI Medio</div><div class="kpi-value" id="kpi-roi"></div><div class="kpi-note">Media por canal</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-heading">
+      <div>
+        <h2>KPIs secundarios</h2>
+        <p>Indicadores de resposta, aquisicao e escala operacional.</p>
+      </div>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi-card"><div class="kpi-label">CTR Medio</div><div class="kpi-value" id="kpi-ctr"></div><div class="kpi-note">Cliques / impressoes</div></div>
+      <div class="kpi-card"><div class="kpi-label">CPA Medio</div><div class="kpi-value" id="kpi-cpa"></div><div class="kpi-note">Custo por conversao</div></div>
+      <div class="kpi-card"><div class="kpi-label">Conversoes Totais</div><div class="kpi-value" id="kpi-conv"></div><div class="kpi-note">Volume convertido</div></div>
+      <div class="kpi-card"><div class="kpi-label">Quantidade de Campanhas</div><div class="kpi-value" id="kpi-campaigns"></div><div class="kpi-note" id="kpi-campaigns-note"></div></div>
+    </div>
+  </section>
+
+  <section class="grid-main">
+    <div class="card">
+      <div class="card-header">
+        <div><div class="card-title">Evolucao Mensal</div><div class="card-sub">Comparativo entre receita e lucro ao longo de 2025.</div></div>
+        <span class="tag">Receita x Lucro</span>
+      </div>
+      <div class="chart-lg"><canvas id="monthlyChart"></canvas></div>
+    </div>
+  </section>
+
+  <section class="grid-two">
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Receita por Canal</div><div class="card-sub">Ranking de canais por geracao de receita.</div></div><span class="tag">Total</span></div>
+      <div class="chart-md"><canvas id="revenueChannelChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Lucro por Canal</div><div class="card-sub">Contribuicao financeira liquida por canal.</div></div><span class="tag">Total</span></div>
+      <div class="chart-md"><canvas id="profitChannelChart"></canvas></div>
+    </div>
+  </section>
+
+  <section class="grid-two">
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">ROI Medio por Canal</div><div class="card-sub">Eficiencia media do investimento por canal.</div></div><span class="tag">Media</span></div>
+      <div class="chart-sm"><canvas id="roiChannelChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">CPA Medio por Canal</div><div class="card-sub">Custo medio necessario para gerar conversao.</div></div><span class="tag">Media</span></div>
+      <div class="chart-sm"><canvas id="cpaChannelChart"></canvas></div>
+    </div>
+  </section>
+
+  <section class="grid-two">
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Conversoes por Canal</div><div class="card-sub">Escala de conversoes geradas em cada canal.</div></div><span class="tag">Volume</span></div>
+      <div class="chart-sm"><canvas id="conversionsChannelChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">CTR Medio por Canal</div><div class="card-sub">Capacidade media de atrair cliques por impressao.</div></div><span class="tag">Media</span></div>
+      <div class="chart-sm"><canvas id="ctrChannelChart"></canvas></div>
+    </div>
+  </section>
+
+  <section class="grid-main">
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Top 5 Campanhas Mais Lucrativas</div><div class="card-sub">Campanhas com maior lucro absoluto na base analisada.</div></div><span class="tag">Top 5</span></div>
+      <div class="chart-top"><canvas id="topCampaignChart"></canvas></div>
+    </div>
+  </section>
+
+  <section class="grid-main">
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Top 5 Campanhas com Menor Retorno</div><div class="card-sub">Campanhas de menor lucro, candidatas a revisao de estrategia.</div></div><span class="tag">Bottom 5</span></div>
+      <div class="chart-top"><canvas id="bottomCampaignChart"></canvas></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-heading">
+      <div>
+        <h2>Insights automaticos</h2>
+        <p>Leitura executiva gerada a partir das metricas consolidadas.</p>
+      </div>
+    </div>
+    <div class="insights-grid" id="insightsGrid"></div>
+  </section>
+
+  <section>
+    <div class="section-heading">
+      <div>
+        <h2>Recomendacoes estrategicas</h2>
+        <p>Acoes sugeridas para ampliar retorno, eficiencia e escala.</p>
+      </div>
+    </div>
+    <div class="recommendations-grid" id="recommendationsGrid"></div>
+  </section>
+
+  <footer>
+    Marketing Campaign Autopsy. Dados reais extraidos de marketing_campaign_performance_tratado.csv.
+  </footer>
+</div>
+
+<script>
+const DATA = {
+  summary: {
+    total_campaigns: 10000,
+    period_start: "2025-01-01",
+    period_end: "2026-01-15",
+    total_revenue: 51026489.30,
+    total_cost: 25523569.91,
+    total_profit: 25502919.39,
+    avg_roi: 1.0016,
+    total_conversions: 10107000,
+    avg_cpa: 10.247,
+    avg_ctr: 5.4622,
+    avg_conv_rate: 12.094
+  },
+  by_channel: [
+    { Channel:"Display", Campaigns:2069, Revenue:10715125.21, Cost:5343184.30, Lucro:5371940.91, ROI:0.9993, Conversions:2057607, CPA:10.8041, CTR:5.4306, ConvRate:12.1116 },
+    { Channel:"Email", Campaigns:1996, Revenue:10130542.61, Cost:5065029.98, Lucro:5065512.63, ROI:1.0100, Conversions:2076423, CPA:10.1307, CTR:5.4562, ConvRate:12.1220 },
+    { Channel:"Influencer", Campaigns:2056, Revenue:10558118.99, Cost:5278787.92, Lucro:5279331.07, ROI:0.9975, Conversions:2101198, CPA:9.1111, CTR:5.4669, ConvRate:11.9889 },
+    { Channel:"Search", Campaigns:1924, Revenue:9897677.79, Cost:4916568.46, Lucro:4981109.33, ROI:1.0134, Conversions:1951752, CPA:10.8949, CTR:5.5169, ConvRate:12.1150 },
+    { Channel:"Social", Campaigns:1955, Revenue:9725024.70, Cost:4919999.25, Lucro:4805025.45, ROI:0.9880, Conversions:1920020, CPA:10.3332, CTR:5.4429, ConvRate:12.1368 }
+  ],
+  monthly: [
+    { YearMonth:"Jan/25", Revenue:4321748.75, Lucro:2200657.19 },
+    { YearMonth:"Fev/25", Revenue:3917068.44, Lucro:1958397.46 },
+    { YearMonth:"Mar/25", Revenue:4355047.85, Lucro:2191281.34 },
+    { YearMonth:"Abr/25", Revenue:4583817.85, Lucro:2313405.96 },
+    { YearMonth:"Mai/25", Revenue:4533400.94, Lucro:2282644.43 },
+    { YearMonth:"Jun/25", Revenue:4080666.52, Lucro:1994237.73 },
+    { YearMonth:"Jul/25", Revenue:4239110.66, Lucro:2100212.42 },
+    { YearMonth:"Ago/25", Revenue:4390108.74, Lucro:2204392.68 },
+    { YearMonth:"Set/25", Revenue:3960373.22, Lucro:1966715.48 },
+    { YearMonth:"Out/25", Revenue:4363171.95, Lucro:2216917.57 },
+    { YearMonth:"Nov/25", Revenue:4173435.66, Lucro:2042309.22 },
+    { YearMonth:"Dez/25", Revenue:4108538.72, Lucro:2031747.91 }
+  ],
+  monthlyByChannel: {
+    all: [{ YearMonth:"Jan/25", Revenue:4321748.75, Lucro:2200657.19 }, { YearMonth:"Fev/25", Revenue:3917068.44, Lucro:1958397.46 }, { YearMonth:"Mar/25", Revenue:4355047.85, Lucro:2191281.34 }, { YearMonth:"Abr/25", Revenue:4583817.85, Lucro:2313405.96 }, { YearMonth:"Mai/25", Revenue:4533400.94, Lucro:2282644.43 }, { YearMonth:"Jun/25", Revenue:4080666.52, Lucro:1994237.73 }, { YearMonth:"Jul/25", Revenue:4239110.66, Lucro:2100212.42 }, { YearMonth:"Ago/25", Revenue:4390108.74, Lucro:2204392.68 }, { YearMonth:"Set/25", Revenue:3960373.22, Lucro:1966715.48 }, { YearMonth:"Out/25", Revenue:4363171.95, Lucro:2216917.57 }, { YearMonth:"Nov/25", Revenue:4173435.66, Lucro:2042309.22 }, { YearMonth:"Dez/25", Revenue:4108538.72, Lucro:2031747.91 }],
+    Display: [{ YearMonth:"Jan/25", Revenue:837149.05, Lucro:429577.59 }, { YearMonth:"Fev/25", Revenue:773492.98, Lucro:394692.82 }, { YearMonth:"Mar/25", Revenue:913946.28, Lucro:455989.33 }, { YearMonth:"Abr/25", Revenue:888236.10, Lucro:441571.42 }, { YearMonth:"Mai/25", Revenue:974952.21, Lucro:495725.44 }, { YearMonth:"Jun/25", Revenue:921058.05, Lucro:450441.63 }, { YearMonth:"Jul/25", Revenue:784849.04, Lucro:396448.68 }, { YearMonth:"Ago/25", Revenue:1032430.39, Lucro:531633.87 }, { YearMonth:"Set/25", Revenue:842075.88, Lucro:416631.86 }, { YearMonth:"Out/25", Revenue:909545.74, Lucro:462657.61 }, { YearMonth:"Nov/25", Revenue:949437.75, Lucro:451161.23 }, { YearMonth:"Dez/25", Revenue:887951.74, Lucro:445409.43 }],
+    Email: [{ YearMonth:"Jan/25", Revenue:804799.62, Lucro:403687.80 }, { YearMonth:"Fev/25", Revenue:737531.41, Lucro:358589.19 }, { YearMonth:"Mar/25", Revenue:961011.92, Lucro:489952.65 }, { YearMonth:"Abr/25", Revenue:992173.26, Lucro:517595.92 }, { YearMonth:"Mai/25", Revenue:772726.32, Lucro:389402.80 }, { YearMonth:"Jun/25", Revenue:777863.07, Lucro:370236.12 }, { YearMonth:"Jul/25", Revenue:889938.50, Lucro:449349.16 }, { YearMonth:"Ago/25", Revenue:746589.59, Lucro:375622.96 }, { YearMonth:"Set/25", Revenue:759217.81, Lucro:352985.07 }, { YearMonth:"Out/25", Revenue:922058.55, Lucro:471648.93 }, { YearMonth:"Nov/25", Revenue:959656.49, Lucro:483712.19 }, { YearMonth:"Dez/25", Revenue:806976.07, Lucro:402729.84 }],
+    Influencer: [{ YearMonth:"Jan/25", Revenue:962851.36, Lucro:480002.56 }, { YearMonth:"Fev/25", Revenue:838006.81, Lucro:428628.37 }, { YearMonth:"Mar/25", Revenue:789754.59, Lucro:405603.77 }, { YearMonth:"Abr/25", Revenue:996557.01, Lucro:495700.82 }, { YearMonth:"Mai/25", Revenue:932770.56, Lucro:484501.03 }, { YearMonth:"Jun/25", Revenue:799441.23, Lucro:393620.75 }, { YearMonth:"Jul/25", Revenue:898437.29, Lucro:434154.92 }, { YearMonth:"Ago/25", Revenue:948808.26, Lucro:481545.07 }, { YearMonth:"Set/25", Revenue:764358.00, Lucro:398598.42 }, { YearMonth:"Out/25", Revenue:927199.52, Lucro:459533.40 }, { YearMonth:"Nov/25", Revenue:817615.95, Lucro:389165.23 }, { YearMonth:"Dez/25", Revenue:882318.41, Lucro:428276.73 }],
+    Search: [{ YearMonth:"Jan/25", Revenue:834050.03, Lucro:431453.21 }, { YearMonth:"Fev/25", Revenue:860283.91, Lucro:435598.07 }, { YearMonth:"Mar/25", Revenue:816431.17, Lucro:415536.77 }, { YearMonth:"Abr/25", Revenue:781615.99, Lucro:389250.26 }, { YearMonth:"Mai/25", Revenue:953960.46, Lucro:467793.55 }, { YearMonth:"Jun/25", Revenue:767457.47, Lucro:388868.60 }, { YearMonth:"Jul/25", Revenue:909684.03, Lucro:453204.53 }, { YearMonth:"Ago/25", Revenue:887487.72, Lucro:436942.70 }, { YearMonth:"Set/25", Revenue:779318.03, Lucro:380667.92 }, { YearMonth:"Out/25", Revenue:874371.98, Lucro:455447.15 }, { YearMonth:"Nov/25", Revenue:672289.88, Lucro:338185.48 }, { YearMonth:"Dez/25", Revenue:760727.12, Lucro:388161.09 }],
+    Social: [{ YearMonth:"Jan/25", Revenue:882898.69, Lucro:455936.03 }, { YearMonth:"Fev/25", Revenue:707753.33, Lucro:340889.01 }, { YearMonth:"Mar/25", Revenue:873903.89, Lucro:424198.82 }, { YearMonth:"Abr/25", Revenue:925235.49, Lucro:469287.54 }, { YearMonth:"Mai/25", Revenue:898991.39, Lucro:445221.61 }, { YearMonth:"Jun/25", Revenue:814846.70, Lucro:391070.63 }, { YearMonth:"Jul/25", Revenue:756201.80, Lucro:367055.13 }, { YearMonth:"Ago/25", Revenue:774792.78, Lucro:378648.08 }, { YearMonth:"Set/25", Revenue:815403.50, Lucro:417832.21 }, { YearMonth:"Out/25", Revenue:729996.16, Lucro:367630.48 }, { YearMonth:"Nov/25", Revenue:774435.59, Lucro:380085.09 }, { YearMonth:"Dez/25", Revenue:770565.38, Lucro:367170.82 }]
+  },
+  top10: [
+    { CampaignID:"CAMP01547", Channel:"Search", Lucro:9903.91, ROI:1.99 },
+    { CampaignID:"CAMP04227", Channel:"Display", Lucro:9847.08, ROI:1.99 },
+    { CampaignID:"CAMP03553", Channel:"Search", Lucro:9761.80, ROI:1.99 },
+    { CampaignID:"CAMP05177", Channel:"Display", Lucro:9758.73, ROI:1.98 },
+    { CampaignID:"CAMP06682", Channel:"Display", Lucro:9711.33, ROI:2.00 },
+    { CampaignID:"CAMP04560", Channel:"Display", Lucro:9709.94, ROI:1.95 },
+    { CampaignID:"CAMP07474", Channel:"Social", Lucro:9693.32, ROI:1.99 },
+    { CampaignID:"CAMP07379", Channel:"Influencer", Lucro:9680.45, ROI:1.99 },
+    { CampaignID:"CAMP08237", Channel:"Social", Lucro:9675.33, ROI:1.99 },
+    { CampaignID:"CAMP04311", Channel:"Search", Lucro:9662.49, ROI:1.97 }
+  ],
+  bot10: [
+    { CampaignID:"CAMP00113", Channel:"Influencer", Lucro:0.69, ROI:0.00 },
+    { CampaignID:"CAMP08423", Channel:"Display", Lucro:0.75, ROI:0.01 },
+    { CampaignID:"CAMP04551", Channel:"Search", Lucro:0.77, ROI:0.00 },
+    { CampaignID:"CAMP09975", Channel:"Influencer", Lucro:1.03, ROI:0.00 },
+    { CampaignID:"CAMP02292", Channel:"Search", Lucro:1.42, ROI:0.00 },
+    { CampaignID:"CAMP04903", Channel:"Search", Lucro:1.42, ROI:0.01 },
+    { CampaignID:"CAMP00746", Channel:"Influencer", Lucro:1.45, ROI:0.00 },
+    { CampaignID:"CAMP06104", Channel:"Email", Lucro:1.57, ROI:0.00 },
+    { CampaignID:"CAMP07133", Channel:"Display", Lucro:2.37, ROI:0.00 },
+    { CampaignID:"CAMP04277", Channel:"Social", Lucro:3.31, ROI:0.00 }
+  ],
+  rankings: {
+    top: {
+      all: [{ CampaignID:"CAMP01547", Channel:"Search", Lucro:9903.91, ROI:1.99 }, { CampaignID:"CAMP04227", Channel:"Display", Lucro:9847.08, ROI:1.99 }, { CampaignID:"CAMP03553", Channel:"Search", Lucro:9761.80, ROI:1.99 }, { CampaignID:"CAMP05177", Channel:"Display", Lucro:9758.73, ROI:1.98 }, { CampaignID:"CAMP06682", Channel:"Display", Lucro:9711.33, ROI:2.00 }],
+      Display: [{ CampaignID:"CAMP04227", Channel:"Display", Lucro:9847.08, ROI:1.99 }, { CampaignID:"CAMP05177", Channel:"Display", Lucro:9758.73, ROI:1.98 }, { CampaignID:"CAMP06682", Channel:"Display", Lucro:9711.33, ROI:2.00 }, { CampaignID:"CAMP04560", Channel:"Display", Lucro:9709.94, ROI:1.95 }, { CampaignID:"CAMP03875", Channel:"Display", Lucro:9647.38, ROI:1.95 }],
+      Email: [{ CampaignID:"CAMP09207", Channel:"Email", Lucro:9503.62, ROI:1.99 }, { CampaignID:"CAMP07827", Channel:"Email", Lucro:9503.56, ROI:2.00 }, { CampaignID:"CAMP05241", Channel:"Email", Lucro:9462.84, ROI:1.97 }, { CampaignID:"CAMP02665", Channel:"Email", Lucro:9393.20, ROI:1.91 }, { CampaignID:"CAMP08663", Channel:"Email", Lucro:9234.71, ROI:1.95 }],
+      Influencer: [{ CampaignID:"CAMP07379", Channel:"Influencer", Lucro:9680.45, ROI:1.99 }, { CampaignID:"CAMP04111", Channel:"Influencer", Lucro:9605.62, ROI:1.92 }, { CampaignID:"CAMP05776", Channel:"Influencer", Lucro:9601.61, ROI:1.93 }, { CampaignID:"CAMP05601", Channel:"Influencer", Lucro:9583.49, ROI:1.97 }, { CampaignID:"CAMP09859", Channel:"Influencer", Lucro:9567.45, ROI:1.98 }],
+      Search: [{ CampaignID:"CAMP01547", Channel:"Search", Lucro:9903.91, ROI:1.99 }, { CampaignID:"CAMP03553", Channel:"Search", Lucro:9761.80, ROI:1.99 }, { CampaignID:"CAMP04311", Channel:"Search", Lucro:9662.49, ROI:1.97 }, { CampaignID:"CAMP01409", Channel:"Search", Lucro:9536.57, ROI:1.99 }, { CampaignID:"CAMP03567", Channel:"Search", Lucro:9240.44, ROI:1.87 }],
+      Social: [{ CampaignID:"CAMP07474", Channel:"Social", Lucro:9693.32, ROI:1.99 }, { CampaignID:"CAMP08237", Channel:"Social", Lucro:9675.33, ROI:1.99 }, { CampaignID:"CAMP06025", Channel:"Social", Lucro:9647.18, ROI:1.99 }, { CampaignID:"CAMP05283", Channel:"Social", Lucro:9525.71, ROI:1.91 }, { CampaignID:"CAMP08043", Channel:"Social", Lucro:9402.60, ROI:1.90 }]
+    },
+    bottom: {
+      all: [{ CampaignID:"CAMP00113", Channel:"Influencer", Lucro:0.69, ROI:0.00 }, { CampaignID:"CAMP08423", Channel:"Display", Lucro:0.75, ROI:0.01 }, { CampaignID:"CAMP04551", Channel:"Search", Lucro:0.77, ROI:0.00 }, { CampaignID:"CAMP09975", Channel:"Influencer", Lucro:1.03, ROI:0.00 }, { CampaignID:"CAMP02292", Channel:"Search", Lucro:1.42, ROI:0.00 }],
+      Display: [{ CampaignID:"CAMP08423", Channel:"Display", Lucro:0.75, ROI:0.01 }, { CampaignID:"CAMP07133", Channel:"Display", Lucro:2.37, ROI:0.00 }, { CampaignID:"CAMP00674", Channel:"Display", Lucro:4.98, ROI:0.00 }, { CampaignID:"CAMP01090", Channel:"Display", Lucro:5.10, ROI:0.01 }, { CampaignID:"CAMP00379", Channel:"Display", Lucro:6.41, ROI:0.01 }],
+      Email: [{ CampaignID:"CAMP06104", Channel:"Email", Lucro:1.57, ROI:0.00 }, { CampaignID:"CAMP09378", Channel:"Email", Lucro:5.12, ROI:0.00 }, { CampaignID:"CAMP06656", Channel:"Email", Lucro:6.00, ROI:0.01 }, { CampaignID:"CAMP05328", Channel:"Email", Lucro:6.99, ROI:0.00 }, { CampaignID:"CAMP00453", Channel:"Email", Lucro:7.54, ROI:0.00 }],
+      Influencer: [{ CampaignID:"CAMP00113", Channel:"Influencer", Lucro:0.69, ROI:0.00 }, { CampaignID:"CAMP09975", Channel:"Influencer", Lucro:1.03, ROI:0.00 }, { CampaignID:"CAMP00746", Channel:"Influencer", Lucro:1.45, ROI:0.00 }, { CampaignID:"CAMP01756", Channel:"Influencer", Lucro:5.67, ROI:0.01 }, { CampaignID:"CAMP02976", Channel:"Influencer", Lucro:7.01, ROI:0.00 }],
+      Search: [{ CampaignID:"CAMP04551", Channel:"Search", Lucro:0.77, ROI:0.00 }, { CampaignID:"CAMP02292", Channel:"Search", Lucro:1.42, ROI:0.00 }, { CampaignID:"CAMP04903", Channel:"Search", Lucro:1.42, ROI:0.01 }, { CampaignID:"CAMP03322", Channel:"Search", Lucro:3.57, ROI:0.00 }, { CampaignID:"CAMP07541", Channel:"Search", Lucro:4.56, ROI:0.00 }],
+      Social: [{ CampaignID:"CAMP04277", Channel:"Social", Lucro:3.31, ROI:0.00 }, { CampaignID:"CAMP03986", Channel:"Social", Lucro:3.83, ROI:0.00 }, { CampaignID:"CAMP05353", Channel:"Social", Lucro:5.98, ROI:0.01 }, { CampaignID:"CAMP04596", Channel:"Social", Lucro:7.13, ROI:0.01 }, { CampaignID:"CAMP06295", Channel:"Social", Lucro:8.71, ROI:0.07 }]
+    }
+  }
+};
+
+const COLORS = ["#2563EB", "#7C3AED", "#9333EA", "#5B21B6", "#1D4ED8"];
+const GRID = "#EEF2FF";
+let activeChannel = "all";
+let charts = {};
+
+const money = value => "$" + value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const moneyShort = value => value >= 1e6 ? "$" + (value / 1e6).toFixed(2) + "M" : "$" + (value / 1e3).toFixed(1) + "K";
+const numberShort = value => value >= 1e6 ? (value / 1e6).toFixed(2) + "M" : value >= 1e3 ? (value / 1e3).toFixed(1) + "K" : String(Math.round(value));
+const percent = value => (value * 100).toFixed(1) + "%";
+
+function channels() {
+  return activeChannel === "all" ? DATA.by_channel : DATA.by_channel.filter(item => item.Channel === activeChannel);
+}
+
+function currentSummary() {
+  const rows = channels();
+  return {
+    revenue: rows.reduce((sum, row) => sum + row.Revenue, 0),
+    cost: rows.reduce((sum, row) => sum + row.Cost, 0),
+    profit: rows.reduce((sum, row) => sum + row.Lucro, 0),
+    roi: rows.reduce((sum, row) => sum + row.ROI, 0) / rows.length,
+    ctr: rows.reduce((sum, row) => sum + row.CTR, 0) / rows.length,
+    cpa: rows.reduce((sum, row) => sum + row.CPA, 0) / rows.length,
+    convRate: rows.reduce((sum, row) => sum + row.ConvRate, 0) / rows.length,
+    conversions: rows.reduce((sum, row) => sum + row.Conversions, 0),
+    campaigns: rows.reduce((sum, row) => sum + row.Campaigns, 0)
+  };
+}
+
+function setText(id, value) {
+  document.getElementById(id).textContent = value;
+}
+
+function updateKpis() {
+  const summary = currentSummary();
+  setText("kpi-revenue", moneyShort(summary.revenue));
+  setText("kpi-cost", moneyShort(summary.cost));
+  setText("kpi-profit", moneyShort(summary.profit));
+  setText("kpi-roi", percent(summary.roi));
+  setText("kpi-ctr", summary.ctr.toFixed(2) + "%");
+  setText("kpi-cpa", "$" + summary.cpa.toFixed(2));
+  setText("kpi-conv", numberShort(summary.conversions));
+  setText("kpi-campaigns", summary.campaigns.toLocaleString("pt-BR"));
+  setText("kpi-margin", "Margem de " + ((summary.profit / summary.revenue) * 100).toFixed(1) + "%");
+  setText("kpi-revenue-note", activeChannel === "all" ? "Base completa" : activeChannel);
+  setText("kpi-campaigns-note", activeChannel === "all" ? "Campanhas analisadas" : "Campanhas do canal");
+}
+
+Chart.defaults.font.family = "Inter";
+Chart.defaults.color = "#64748B";
+
+const chartDefaults = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      labels: { usePointStyle: true, boxWidth: 8, boxHeight: 8, color: "#64748B", font: { weight: "700" } }
+    },
+    tooltip: {
+      backgroundColor: "#111827",
+      titleColor: "#FFFFFF",
+      bodyColor: "#E5E7EB",
+      padding: 12,
+      cornerRadius: 12,
+      displayColors: false
+    }
+  }
+};
+
+function resetChart(id) {
+  if (charts[id]) charts[id].destroy();
+}
+
+function axisOptions(callback) {
+  return {
+    x: { grid: { display: false }, ticks: { color: "#64748B", font: { weight: "700" } } },
+    y: { grid: { color: GRID }, border: { display: false }, ticks: { color: "#64748B", callback } }
+  };
+}
+
+function buildMonthlyChart() {
+  resetChart("monthlyChart");
+  const d = DATA.monthlyByChannel[activeChannel] || DATA.monthlyByChannel.all;
+  charts.monthlyChart = new Chart(document.getElementById("monthlyChart"), {
+    type: "line",
+    data: {
+      labels: d.map(item => item.YearMonth),
+      datasets: [
+        { label: "Receita", data: d.map(item => item.Revenue), borderColor: "#2563EB", backgroundColor: "rgba(37, 99, 235, 0.08)", pointBackgroundColor: "#2563EB", pointRadius: 4, borderWidth: 3, fill: true, tension: 0.38 },
+        { label: "Lucro", data: d.map(item => item.Lucro), borderColor: "#7C3AED", backgroundColor: "rgba(124, 58, 237, 0.08)", pointBackgroundColor: "#7C3AED", pointRadius: 4, borderWidth: 3, fill: true, tension: 0.38 }
+      ]
+    },
+    options: { ...chartDefaults, scales: axisOptions(value => moneyShort(value)) }
+  });
+}
+
+function buildChannelBar(id, field, formatter, horizontal = false, ascending = false) {
+  resetChart(id);
+  const rows = [...channels()].sort((a, b) => ascending ? a[field] - b[field] : b[field] - a[field]);
+  charts[id] = new Chart(document.getElementById(id), {
+    type: "bar",
+    data: {
+      labels: rows.map(item => item.Channel),
+      datasets: [{ data: rows.map(item => item[field]), backgroundColor: rows.map((_, i) => COLORS[i % COLORS.length]), borderRadius: 10, borderSkipped: false, barThickness: horizontal ? 26 : 34 }]
+    },
+    options: {
+      ...chartDefaults,
+      indexAxis: horizontal ? "y" : "x",
+      plugins: { ...chartDefaults.plugins, legend: { display: false }, tooltip: { ...chartDefaults.plugins.tooltip, callbacks: { label: ctx => formatter(ctx.raw) } } },
+      scales: horizontal
+        ? { x: { grid: { color: GRID }, border: { display: false }, ticks: { callback: formatter } }, y: { grid: { display: false }, ticks: { color: "#111827", font: { weight: "700" } } } }
+        : axisOptions(formatter)
+    }
+  });
+}
+
+function buildCampaignChart(id, rankingGroup, formatter) {
+  resetChart(id);
+  const data = rankingGroup[activeChannel] || rankingGroup.all;
+  charts[id] = new Chart(document.getElementById(id), {
+    type: "bar",
+    data: {
+      labels: data.map(item => item.CampaignID),
+      datasets: [{ data: data.map(item => item.Lucro), backgroundColor: data.map((_, i) => COLORS[i % COLORS.length]), borderRadius: 10, borderSkipped: false, barThickness: 28 }]
+    },
+    options: {
+      ...chartDefaults,
+      indexAxis: "y",
+      plugins: {
+        ...chartDefaults.plugins,
+        legend: { display: false },
+        tooltip: { ...chartDefaults.plugins.tooltip, callbacks: { title: ctx => ctx[0].label + " - " + data[ctx[0].dataIndex].Channel, label: ctx => "Lucro: " + formatter(ctx.raw) } }
+      },
+      scales: { x: { grid: { color: GRID }, border: { display: false }, ticks: { callback: formatter } }, y: { grid: { display: false }, ticks: { color: "#111827", font: { weight: "800" } } } }
+    }
+  });
+}
+
+function buildCharts() {
+  buildMonthlyChart();
+  buildChannelBar("revenueChannelChart", "Revenue", moneyShort, true);
+  buildChannelBar("profitChannelChart", "Lucro", moneyShort, true);
+  buildChannelBar("roiChannelChart", "ROI", value => percent(value));
+  buildChannelBar("cpaChannelChart", "CPA", value => "$" + value.toFixed(2), false, true);
+  buildChannelBar("conversionsChannelChart", "Conversions", numberShort);
+  buildChannelBar("ctrChannelChart", "CTR", value => value.toFixed(2) + "%");
+  buildCampaignChart("topCampaignChart", DATA.rankings.top, money);
+  buildCampaignChart("bottomCampaignChart", DATA.rankings.bottom, value => "$" + value.toFixed(2));
+}
+
+function card(kicker, text) {
+  return `<article class="insight-card"><div class="insight-kicker">${kicker}</div><div class="insight-text">${text}</div></article>`;
+}
+
+function renderInsights() {
+  const rows = channels();
+  const byProfit = [...rows].sort((a, b) => b.Lucro - a.Lucro)[0];
+  const byRoi = [...rows].sort((a, b) => b.ROI - a.ROI)[0];
+  const byCpa = [...rows].sort((a, b) => a.CPA - b.CPA)[0];
+  const byConvRate = [...rows].sort((a, b) => b.ConvRate - a.ConvRate)[0];
+
+  document.getElementById("insightsGrid").innerHTML = [
+    card("Maior lucro", `<b>${byProfit.Channel}</b> lidera lucro com ${moneyShort(byProfit.Lucro)}.`),
+    card("Melhor ROI", `<b>${byRoi.Channel}</b> tem o maior ROI medio: ${percent(byRoi.ROI)}.`),
+    card("Menor CPA", `<b>${byCpa.Channel}</b> apresenta o menor CPA medio: $${byCpa.CPA.toFixed(2)}.`),
+    card("Maior conversao", `<b>${byConvRate.Channel}</b> lidera taxa de conversao media: ${byConvRate.ConvRate.toFixed(2)}%.`)
+  ].join("");
+}
+
+function renderRecommendations() {
+  const rows = channels();
+  const bestProfit = [...rows].sort((a, b) => b.Lucro - a.Lucro)[0];
+  const bestRoi = [...rows].sort((a, b) => b.ROI - a.ROI)[0];
+  const bestCpa = [...rows].sort((a, b) => a.CPA - b.CPA)[0];
+  const worstRoi = [...rows].sort((a, b) => a.ROI - b.ROI)[0];
+
+  document.getElementById("recommendationsGrid").innerHTML = [
+    card("Redistribuir orcamento", `Priorizar investimento incremental em <b>${bestRoi.Channel}</b>, canal com melhor eficiencia media de ROI.`),
+    card("Escalar vencedores", `Expandir campanhas similares as maiores geradoras de lucro, com foco em <b>${bestProfit.Channel}</b>.`),
+    card("Revisar baixo retorno", `Auditar criativos, segmentacao e lances de <b>${worstRoi.Channel}</b>, menor ROI medio do recorte.`),
+    card("Eficiência de aquisição", `Usar <b>${bestCpa.Channel}</b> como referencia para reduzir CPA nos demais canais.`)
+  ].join("");
+}
+
+function updateDashboard() {
+  updateKpis();
+  buildCharts();
+  renderInsights();
+  renderRecommendations();
+}
+
+document.getElementById("channelFilters").addEventListener("click", event => {
+  const button = event.target.closest(".filter-btn");
+  if (!button) return;
+  document.querySelectorAll(".filter-btn").forEach(item => item.classList.remove("active"));
+  button.classList.add("active");
+  activeChannel = button.dataset.channel;
+  updateDashboard();
+});
+
+updateDashboard();
+</script>
+</body>
+</html>
